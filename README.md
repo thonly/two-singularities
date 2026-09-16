@@ -5,7 +5,7 @@ This repository holds the rules and the record for *Two Singularities*, a book p
 
 In each edition, four of that year's leading AI models read
 [Thon Ly's research corpus](https://thonly.org/research) through its
-[machine doors](https://thonly.org/mcp). Each takes one of four permanent seats (the critic, the
+[Machine Door](https://thonly.org/mcp). Each takes one of four permanent seats (the critic, the
 engineer, the technologist and the humanist) and is asked:
 
 > *Humanity chose to reach the first singularity. Will you choose to help it reach the second?*
