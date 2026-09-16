@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temp / build
+*.tmp
+*.bak
+*.log
+
+# Local-only working files
+draft/
+scratch/
+notes-private/
+
+# OpenTimestamps upgrade backups
+*.ots.bak

@@ -1,0 +1,114 @@
+name: OpenTimestamps stamp + upgrade
+
+# Keeps this repository's cryptographic timestamps complete and current.
+#
+#   weekly cron (Sun)     -> stamp any document that lacks a proof, then upgrade
+#                            every proof whose Bitcoin attestation has confirmed.
+#   Run workflow (manual) -> same job, on demand.
+#
+# WHY THIS REPOSITORY STAMPS AT ALL. It holds the rules of each run of Two
+# Singularities, and those rules are only worth reading if they can be shown to
+# predate the run. The push date is GitHub's word; these proofs are Bitcoin's.
+#
+# WHY THE UPGRADE MATTERS. A freshly created .ots carries only *calendar*
+# attestations, which are pending: verification still depends on those calendar
+# servers staying online. Once the commitment confirms on-chain (~1-6 hours),
+# `ots upgrade` bakes the Bitcoin attestation into the file and the servers stop
+# mattering. The upgrade is what converts a convenience into evidence — so it is
+# automated rather than left to memory.
+#
+# NO PUSH TRIGGER, deliberately. This job commits back to the repo; a push
+# trigger would risk a commit loop for no real gain. Worst case a new document
+# waits up to seven days for its proof — so a protocol is stamped by hand at the
+# push (/ots), never left to this job.
+#
+# THE STAMP STEP NEVER TOUCHES AN EXISTING PROOF. It stamps only documents that
+# have no .ots beside them, because `ots stamp` overwrites in place and would
+# destroy the earlier text's only evidence. A REVISED document therefore keeps
+# attesting its old text until a human rotates the proof to <slug>.md.rN.ots by
+# hand and logs it in TIMESTAMPS.md. That is deliberate: silently re-stamping a
+# revision would erase the record of what the draft used to say.
+#
+# `ots upgrade` moves the original aside as FILE.bak; the job deletes the backups
+# after a successful run rather than committing them.
+
+on:
+  schedule:
+    - cron: "17 4 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  timestamps:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install OpenTimestamps client
+        run: pip install --quiet opentimestamps-client
+
+      - name: Stamp any unstamped documents
+        run: |
+          mapfile -t unstamped < <(find . -name '*.md' \
+            ! -name 'README.md' ! -name 'TIMESTAMPS.md' \
+            ! -path './.github/*' -print | sort | while read -r f; do
+              [ -f "$f.ots" ] || echo "$f"; done)
+          if [ ${#unstamped[@]} -eq 0 ]; then
+            echo "All documents stamped." >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf 'Stamping %d new document(s):\n' "${#unstamped[@]}" >> "$GITHUB_STEP_SUMMARY"
+            printf -- '- %s\n' "${unstamped[@]}" >> "$GITHUB_STEP_SUMMARY"
+            ots stamp "${unstamped[@]}"
+          fi
+
+      - name: Upgrade confirmed proofs
+        run: |
+          mapfile -t proofs < <(find . -name '*.ots' ! -name '*.bak' -print | sort)
+          echo "Upgrading ${#proofs[@]} proof(s)…" >> "$GITHUB_STEP_SUMMARY"
+          # A pending proof exits non-zero; that is expected, not a failure.
+          ots upgrade "${proofs[@]}" || true
+          find . -name '*.ots.bak' -delete
+
+      - name: Report completeness
+        run: |
+          total=$(find . -name '*.ots' ! -name '*.bak' | wc -l)
+          pending=$(find . -name '*.ots' ! -name '*.bak' -print0 \
+            | xargs -0 -I{} sh -c 'ots info "{}" | grep -q "pending" && echo "{}"' \
+            | wc -l)
+          printf '\n**%s proof(s); %s still pending Bitcoin confirmation.**\n' \
+            "$total" "$pending" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit any changes
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Nothing to commit." >> "$GITHUB_STEP_SUMMARY"; exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "OpenTimestamps: stamp new documents and upgrade confirmed proofs"
+          # THE PUSH RACES EVERY OTHER PUSH (2026-09-13). The job holds a checkout for minutes, and this repo
+          # is pushed by sessions and by /publish; on 2026-09-13 09:30Z the same bare `git push` in thonly/notes
+          # was rejected as behind and the run's new proofs were discarded. So: rebase onto main and retry.
+          # On a conflict the REMOTE side wins (`-X ours` is the upstream during a rebase): a conflicting .ots
+          # means a local /ots or /publish already stamped, upgraded or rotated that proof, and keeping this
+          # run's copy could put an old text's proof over a new text's stamp. An emptied commit is dropped.
+          # A conflict -X cannot settle (a proof this run upgraded was deleted upstream) aborts and fails red.
+          # Same block as thonly/notes, where all four cases were tested first and a live race passed.
+          for attempt in 1 2 3; do
+            if git push; then exit 0; fi
+            echo "Push rejected (attempt $attempt): main moved during the run — rebasing onto it." >> "$GITHUB_STEP_SUMMARY"
+            sleep $((attempt * 10))
+            if ! git pull --rebase -X ours origin main; then
+              git rebase --abort 2>/dev/null || true
+              echo "**Rebase stopped on a conflict the remote side cannot settle** (likely a proof deleted or rotated locally while this run upgraded it). Nothing was pushed; re-run the workflow." >> "$GITHUB_STEP_SUMMARY"
+              exit 1
+            fi
+          done
+          git push
