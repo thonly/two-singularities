@@ -27,7 +27,8 @@ and timestamped **before** the run it governs. See [`TIMESTAMPS.md`](./TIMESTAMP
 | `protocol/` | Each run's rules: the prompt for every seat, the exact model versions, the version of the corpus read, and the test for when the first singularity has arrived, with its outside measure, a fallback, and who confirms it | Before the run |
 | `predictions/` | The author's predictions of the next edition's critiques | Before that edition runs |
 | `transcripts/` | Every model conversation, word for word | As each run finishes |
-| `ledger/` | Every objection and its status (answered, conceded, rejected with a reason, or still open), with the critics' own judgement of whether each answer holds | With each edition |
+| `ledger/` | Every objection, what could settle it (argument, evidence, or neither), and its status (answered, conceded, rejected with a reason, or still open), with the critics' own judgement of whether each answer holds. An objection about evidence closes only when a prediction registered in advance has been checked | With each edition |
+| `evidence/` | Each edition's evidence page: how many people have been measured with their consent, the state of the author's [prediction register](https://thonly.org/research), which objections a checked prediction closed, and two gauges: the ARC-AGI score for the first singularity, and the economic signs of the second (reported, never declared) | On each 7 January |
 
 Files are written once and never edited. A correction is a new, dated file that names the one it
 corrects.
