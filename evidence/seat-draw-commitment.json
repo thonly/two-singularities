@@ -1,0 +1,20 @@
+{
+  "commitment": "b8a496e378d8709727a3749c7c014e9f6246ae3c0b99768bee3e503bbb57e580",
+  "input": {
+    "network": "52db9ba70e0cc0f6eaf7803dd07447a1f5477735fd3f661792ba94600c84e971",
+    "round": 32354251,
+    "drawId": "two-singularities/pilot-2026/seats",
+    "form": "lot",
+    "regime": "public",
+    "salt": "1c5805b27725bd0ef276b6af35b6e6d2e9e64f43ca5f7ea37a6c8ebebb3e4323",
+    "roster": [
+      "Anthropic",
+      "OpenAI",
+      "Google DeepMind",
+      "xAI"
+    ],
+    "admit": 4
+  },
+  "emits_at_utc": "2026-09-20T01:01:57.000Z",
+  "current_round_at_commit": 32353851
+}
