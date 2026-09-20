@@ -1,0 +1,17 @@
+{
+  "commitment": "b8a496e378d8709727a3749c7c014e9f6246ae3c0b99768bee3e503bbb57e580",
+  "beacon_round": 32354251,
+  "randomness": "0e6fa3b3b33a8ef56228bed16f9a4155671cc7bb2b66316f0d16d9ac3e96a77b",
+  "order": [
+    "OpenAI",
+    "Anthropic",
+    "Google DeepMind",
+    "xAI"
+  ],
+  "seats": {
+    "SW": "OpenAI",
+    "H3": "Anthropic",
+    "F333": "Google DeepMind",
+    "TH": "xAI"
+  }
+}
