@@ -26,6 +26,14 @@ if [ ! -x "$VENV/bin/ots" ]; then
     "$VENV/bin/pip" install --quiet opentimestamps-client
 fi
 
+# ⚠️ CLEAR STALE BACKUPS BEFORE THE LOOP, not only after it (added 2026-09-27). `ots upgrade`
+# refuses to write when <file>.bak already exists ("Could not backup timestamp … already exists")
+# and exits non-zero — which the loop below counts as STILL PENDING. So a .bak left by any direct
+# `ots upgrade` or an aborted run made a completable proof report as waiting on Bitcoin, silently,
+# until a later run's tidy step removed it. The .bak is only the pre-upgrade copy of a proof that
+# is still in place (and in git), and *.ots.bak is gitignored — deleting it loses nothing.
+find . -name '*.ots.bak' ! -path './.git/*' -delete
+
 upgraded=0
 complete=0
 pending=0
